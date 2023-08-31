@@ -2,6 +2,8 @@
 #define LEDAZUL 8
 #define PULSADOR 12
 #define TIEMPOANTIR 40
+#define TIEMPO_LOOP 5
+#define VAL_MAX 15
 
 void debounceFSM_init();      // debe cargar el estado inicial
 void debounceFSM_update();    // debe leer las entradas, resolver la lógica de transición de estados y actualizar las salidas
@@ -12,10 +14,10 @@ void botonPresionado();
 void botonSuelto();
 
 typedef enum{
-BUTTON_UP,
-BUTTON_FALLING,
-BUTTON_DOWN,
-BUTTON_RAISING,
+  BUTTON_UP,
+  BUTTON_FALLING,
+  BUTTON_DOWN,
+  BUTTON_RISING,
 } debounceState_t;
 
 debounceState_t currentstatus;
@@ -39,7 +41,7 @@ char numero[16]{
   B10001110,
 };
 
-int cuentaNum = 0;
+uint8_t cuentaNum = 0;
 void setup()
 {
   pinMode(LEDROJO, OUTPUT);
@@ -47,20 +49,20 @@ void setup()
   pinMode(PULSADOR, INPUT);
   DDRD=B11111111;
   debounceFSM_init();
-  inicializar_display;
+  inicializar_display();
  
 }
 
 void loop(){
   debounceFSM_update();
-  delay(5);
+  delay(TIEMPO_LOOP);
 }
 void debounceFSM_init(){
   currentstatus = BUTTON_UP;
 }
 
 void debounceFSM_update(){
-  static unsigned long tprevio = millis ();
+  static unsigned long tprevio = millis (); //para tener mucho espacio de variable
   
   
   switch (currentstatus){
@@ -68,15 +70,13 @@ void debounceFSM_update(){
     if (digitalRead (PULSADOR) == LOW);
         currentstatus = BUTTON_FALLING;
         tprevio = millis();
-         digitalWrite (LEDROJO, LOW);
-        digitalWrite (LEDAZUL, HIGH);
-    
+      
     break;
 
     
     case BUTTON_DOWN:
     if (digitalRead (PULSADOR) == HIGH){
-        currentstatus = BUTTON_RAISING;
+        currentstatus = BUTTON_RISING;
         tprevio = millis();
   }
     break;
@@ -93,7 +93,7 @@ void debounceFSM_update(){
     }
 
       
-    case BUTTON_RAISING:
+    case BUTTON_RISING:
     if (millis()-tprevio>= TIEMPOANTIR){
       if (digitalRead (PULSADOR)== HIGH){
         currentstatus = BUTTON_UP;
@@ -109,7 +109,7 @@ void botonPresionado(){
      digitalWrite (LEDROJO, HIGH);
      digitalWrite (LEDAZUL, LOW);
      PORTD = numero[cuentaNum];
-      if (cuentaNum == 15) cuentaNum = 0;
+      if (cuentaNum == VAL_MAX) cuentaNum = 0;
        else cuentaNum++;
 }
 
@@ -119,6 +119,7 @@ void botonSuelto(){
 }
 
 void inicializar_display(void){
-  PORTD = B01111110;
+  PORTD = numero[0];
   
 }
+ 
